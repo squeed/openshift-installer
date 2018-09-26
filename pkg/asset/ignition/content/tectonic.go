@@ -88,8 +88,9 @@ echo "Rendering release-payload manifests..."
 podman run \
 	--volume "$PWD:/assets:z" \
 	"{{.ReleaseImage}}" \
-	--output-dir=/assets \
-	--release-image="{{.ReleaseImage}}"
+	render \
+		--output-dir=/assets \
+		--release-image="{{.ReleaseImage}}"
 
 # Wait for Kubernetes pods
 wait_for_pods kube-system
