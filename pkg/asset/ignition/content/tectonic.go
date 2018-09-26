@@ -1,5 +1,9 @@
 package content
 
+import (
+	"text/template"
+)
+
 const (
 	// TectonicSystemdContents is a service that runs tectonic on the masters.
 	TectonicSystemdContents = `[Unit]
@@ -17,10 +21,12 @@ RestartSec=5s
 
 [Install]
 WantedBy=multi-user.target`
+)
 
-	// TectonicShFileContents is a script file for running tectonic on bootstrap
+var (
+	// TectonicShFileTemplate is a script file for running tectonic on bootstrap
 	// nodes.
-	TectonicShFileContents = `#!/usr/bin/env bash
+	TectonicShFileTemplate = template.Must(template.New("tectonic.sh").Parse(`#!/usr/bin/env bash
 set -e
 
 KUBECONFIG="$1"
@@ -77,6 +83,14 @@ wait_for_pods() {
 	set -e
 }
 
+echo "Rendering release-payload manifests..."
+# shellcheck disable=SC2154
+podman run \
+	--volume "$PWD:/assets:z" \
+	"{{.ReleaseImage}}" \
+	--output-dir=/assets \
+	--release-image="{{.ReleaseImage}}"
+
 # Wait for Kubernetes pods
 wait_for_pods kube-system
 
@@ -90,5 +104,5 @@ done
 # Wait for Tectonic pods
 wait_for_pods tectonic-system
 
-echo "Tectonic installation is done"`
+echo "Tectonic installation is done"`))
 )

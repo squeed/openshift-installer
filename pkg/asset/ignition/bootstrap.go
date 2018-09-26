@@ -26,17 +26,17 @@ const (
 // bootstrapTemplateData is the data to use to replace values in bootstrap
 // template files.
 type bootstrapTemplateData struct {
-	ClusterDNSIP               string
-	CloudProvider              string
-	CloudProviderConfig        string
-	DebugConfig                string
-	KubeCoreRenderImage        string
-	MachineConfigOperatorImage string
-	EtcdCertSignerImage        string
-	EtcdctlImage               string
-	BootkubeImage              string
-	HyperkubeImage             string
-	EtcdCluster                string
+	BootkubeImage       string
+	CloudProvider       string
+	CloudProviderConfig string
+	ClusterDNSIP        string
+	DebugConfig         string
+	EtcdCertSignerImage string
+	EtcdCluster         string
+	EtcdctlImage        string
+	HyperkubeImage      string
+	KubeCoreRenderImage string
+	ReleaseImage        string
 }
 
 // bootstrap is an asset that generates the ignition config for bootstrap nodes.
@@ -189,17 +189,17 @@ func (a *bootstrap) getTemplateData(installConfig *types.InstallConfig) (*bootst
 		etcdEndpoints[i] = fmt.Sprintf("https://%s-etcd-%d.%s:2379", installConfig.Name, i, installConfig.BaseDomain)
 	}
 	return &bootstrapTemplateData{
-		ClusterDNSIP:               clusterDNSIP,
-		CloudProvider:              getCloudProvider(installConfig),
-		CloudProviderConfig:        getCloudProviderConfig(installConfig),
-		DebugConfig:                "",
-		KubeCoreRenderImage:        "quay.io/coreos/kube-core-renderer-dev:3b6952f5a1ba89bb32dd0630faddeaf2779c9a85",
-		MachineConfigOperatorImage: "docker.io/openshift/origin-machine-config-operator:v4.0.0",
-		EtcdCertSignerImage:        "quay.io/coreos/kube-etcd-signer-server:678cc8e6841e2121ebfdb6e2db568fce290b67d6",
-		EtcdctlImage:               "quay.io/coreos/etcd:v3.2.14",
-		BootkubeImage:              "quay.io/coreos/bootkube:v0.10.0",
-		HyperkubeImage:             "openshift/origin-node:latest",
-		EtcdCluster:                strings.Join(etcdEndpoints, ","),
+		ClusterDNSIP:        clusterDNSIP,
+		CloudProvider:       getCloudProvider(installConfig),
+		CloudProviderConfig: getCloudProviderConfig(installConfig),
+		DebugConfig:         "",
+		KubeCoreRenderImage: "quay.io/coreos/kube-core-renderer-dev:3b6952f5a1ba89bb32dd0630faddeaf2779c9a85",
+		EtcdCertSignerImage: "quay.io/coreos/kube-etcd-signer-server:678cc8e6841e2121ebfdb6e2db568fce290b67d6",
+		EtcdctlImage:        "quay.io/coreos/etcd:v3.2.14",
+		BootkubeImage:       "quay.io/coreos/bootkube:v0.10.0",
+		ReleaseImage:        "registry.svc.ci.openshift.org/openshift/origin-release:v4.0",
+		HyperkubeImage:      "openshift/origin-node:latest",
+		EtcdCluster:         strings.Join(etcdEndpoints, ","),
 	}, nil
 }
 
@@ -233,7 +233,7 @@ func (a *bootstrap) addBootkubeFiles(config *ignition.Config, dependencies map[a
 func (a *bootstrap) addTectonicFiles(config *ignition.Config, dependencies map[asset.Asset]*asset.State, templateData *bootstrapTemplateData) {
 	config.Storage.Files = append(
 		config.Storage.Files,
-		fileFromString("/opt/tectonic/tectonic.sh", 0555, content.TectonicShFileContents),
+		fileFromString("/opt/tectonic/tectonic.sh", 0555, applyTemplateData(content.TectonicShFileTemplate, templateData)),
 	)
 	config.Storage.Files = append(
 		config.Storage.Files,

@@ -29,6 +29,9 @@ set -e
 
 mkdir --parents /etc/kubernetes/manifests/
 
+MACHINE_CONFIG_OPERATOR_IMAGE=$(podman run --rm {{.ReleaseImage}} image machine-config-operator)
+echo "Found Machine Config Operator's image: $MACHINE_CONFIG_OPERATOR_IMAGE"
+
 if [ ! -d kco-bootstrap ]
 then
 	echo "Rendering Kubernetes core manifests..."
@@ -54,7 +57,7 @@ then
 	podman run \
 		--user 0 \
 		--volume "$PWD:/assets:z" \
-		"{{.MachineConfigOperatorImage}}" \
+		"${MACHINE_CONFIG_OPERATOR_IMAGE}" \
 		bootstrap \
 			--etcd-ca=/assets/tls/etcd-client-ca.crt \
 			--root-ca=/assets/tls/root-ca.crt \
