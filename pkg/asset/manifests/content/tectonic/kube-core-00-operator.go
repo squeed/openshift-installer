@@ -1,34 +1,37 @@
-package operators
+package tectonic
 
 import (
 	"text/template"
 )
 
 var (
-	// TectonicIngressControllerOperator  is the variable/constant representing the contents of the respective file
-	TectonicIngressControllerOperator = template.Must(template.New("tectonic-ingress-controller-operator.yaml").Parse(`
+	// KubeCoreOperator  is the variable/constant representing the contents of the respective file
+	KubeCoreOperator = template.Must(template.New("kube-core-00-operator.yaml").Parse(`
 apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
-  name: tectonic-ingress-controller-operator
-  namespace: openshift-ingress
+  name: kube-core-operator
+  namespace: kube-system
   labels:
-    k8s-app: tectonic-ingress-controller-operator
+    k8s-app: kube-core-operator
     managed-by-channel-operator: "true"
 spec:
   replicas: 1
   selector:
     matchLabels:
-      k8s-app: tectonic-ingress-controller-operator
+      k8s-app: kube-core-operator
   template:
     metadata:
       labels:
-        k8s-app: tectonic-ingress-controller-operator
-        tectonic-app-version-name: tectonic-ingress
+        k8s-app: kube-core-operator
+        tectonic-app-version-name: kube-core
     spec:
       containers:
-      - name: tectonic-ingress-controller-operator
-        image: {{.TectonicIngressControllerOperatorImage}}
+      - name: kube-core-operator
+        image: {{.KubeCoreOperatorImage}}
+        imagePullPolicy: Always
+        args:
+        - --config=/etc/cluster-config/kco-config.yaml
         resources:
           limits:
             cpu: 20m
@@ -47,7 +50,6 @@ spec:
       securityContext:
         runAsNonRoot: true
         runAsUser: 65534
-      serviceAccount: tectonic-ingress-controller-operator
       tolerations:
       - key: "node-role.kubernetes.io/master"
         operator: "Exists"
@@ -57,7 +59,7 @@ spec:
         configMap:
           name: cluster-config-v1
           items:
-          - key: ingress-config
-            path: ingress-config
+          - key: kco-config
+            path: kco-config.yaml
 `))
 )

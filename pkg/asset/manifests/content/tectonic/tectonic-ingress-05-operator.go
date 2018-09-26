@@ -1,34 +1,34 @@
-package operators
+package tectonic
 
 import (
 	"text/template"
 )
 
 var (
-	// KubeAddonOperator  is the variable/constant representing the contents of the respective file
-	KubeAddonOperator = template.Must(template.New("kube-addon-operator.yaml").Parse(`
+	// TectonicIngressControllerOperator  is the variable/constant representing the contents of the respective file
+	TectonicIngressControllerOperator = template.Must(template.New("tectonic-ingress-05-operator.yaml").Parse(`
 apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
-  name: kube-addon-operator
-  namespace: tectonic-system
+  name: tectonic-ingress-controller-operator
+  namespace: openshift-ingress
   labels:
-    k8s-app: kube-addon-operator
+    k8s-app: tectonic-ingress-controller-operator
     managed-by-channel-operator: "true"
 spec:
   replicas: 1
   selector:
     matchLabels:
-      k8s-app: kube-addon-operator
+      k8s-app: tectonic-ingress-controller-operator
   template:
     metadata:
       labels:
-        k8s-app: kube-addon-operator
-        tectonic-app-version-name: kube-addon
+        k8s-app: tectonic-ingress-controller-operator
+        tectonic-app-version-name: tectonic-ingress
     spec:
       containers:
-      - name: kube-addon-operator
-        image: {{.KubeAddonOperatorImage}}
+      - name: tectonic-ingress-controller-operator
+        image: {{.TectonicIngressControllerOperatorImage}}
         resources:
           limits:
             cpu: 20m
@@ -47,6 +47,7 @@ spec:
       securityContext:
         runAsNonRoot: true
         runAsUser: 65534
+      serviceAccount: tectonic-ingress-controller-operator
       tolerations:
       - key: "node-role.kubernetes.io/master"
         operator: "Exists"
@@ -56,7 +57,7 @@ spec:
         configMap:
           name: cluster-config-v1
           items:
-          - key: addon-config
-            path: addon-config
+          - key: ingress-config
+            path: ingress-config
 `))
 )
