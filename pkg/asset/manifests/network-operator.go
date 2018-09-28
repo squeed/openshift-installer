@@ -2,17 +2,13 @@ package manifests
 
 import (
 	"github.com/ghodss/yaml"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/openshift/installer/pkg/asset"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	"github.com/openshift/installer/pkg/types"
 
-	tectonicnetwork "github.com/coreos/tectonic-config/config/tectonic-network"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-const (
-	defaultMTU = "1450"
+	netopv1 "github.com/openshift/cluster-network-operator/pkg/apis/networkoperator/v1"
 )
 
 // networkOperator generates the network-operator-*.yml files
@@ -70,16 +66,30 @@ func (no *networkOperator) Generate(dependencies map[asset.Asset]*asset.State) (
 }
 
 func (no *networkOperator) netConfig() ([]byte, error) {
-	networkConfig := tectonicnetwork.OperatorConfig{
+	networkConfig := netopv1.NetworkConfig{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: tectonicnetwork.APIVersion,
-			Kind:       tectonicnetwork.Kind,
+			APIVersion: netopv1.SchemeGroupVersion.String(),
+			Kind:       "NetworkConfig",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "default",
+		},
+		Spec: netopv1.NetworkConfigSpec{
+			ServiceNetwork: no.installConfig.Networking.ServiceCIDR.String(),
+			ClusterNetworks: []netopv1.ClusterNetwork{
+				{
+					CIDR:             no.installConfig.Networking.PodCIDR.String(),
+					HostSubnetLength: 9,
+				},
+			},
+			DefaultNetwork: netopv1.DefaultNetworkDefinition{
+				Type: netopv1.NetworkTypeOpenshiftSDN,
+				OpenshiftSDNConfig: &netopv1.OpenshiftSDNConfig{
+					Mode: netopv1.SDNModePolicy,
+				},
+			},
 		},
 	}
-
-	networkConfig.PodCIDR = no.installConfig.Networking.PodCIDR.String()
-	networkConfig.CalicoConfig.MTU = defaultMTU
-	networkConfig.NetworkProfile = tectonicnetwork.NetworkType(no.installConfig.Networking.Type)
 
 	return yaml.Marshal(networkConfig)
 }
